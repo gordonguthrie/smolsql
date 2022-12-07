@@ -2,7 +2,7 @@
 %% ex: ts=4 sw=4 et
 {application, riak_ql,
  [
-  {description, "Query language libraries for Riak"},
+  {description, "Very SMOL SQL Database"},
   {vsn, git},
   {applications, [
                   kernel,
