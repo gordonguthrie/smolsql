@@ -18,3 +18,7 @@ SELECT [* | col1, col2, col3, col4...] FROM table WHERE (col1='alice' AND col2='
 SELECT [* | col1, col2, col3] FROM table1 INNER JOIN table2 WHERE table1.col1 = table2.col2;
 DELETE FROM Table  WHERE (col1='alice' AND col2='bob'( OR (col3='charlie' AND col4 [=, <, >, =<. >=] 3);
 ```
+
+## Credits
+
+It is cut down from the `riak_ql` query language in [Basho's Riak Time Series](https://github.com/basho/riak_ql) DB
