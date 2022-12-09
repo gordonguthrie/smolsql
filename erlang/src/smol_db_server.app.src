@@ -1,6 +1,6 @@
 %% -*- tab-width: 4;erlang-indent-level: 4;indent-tabs-mode: nil -*-
 %% ex: ts=4 sw=4 et
-{application, smolsql,
+{application, smol_db_server,
  [
   {description, "Very SMOL SQL Database"},
   {vsn, git},
@@ -10,6 +10,7 @@
                   sasl
                  ]},
   {registered, []},
+  {mod, {smol_db_server, []}},
   {env, [
         ]}
  ]}.
