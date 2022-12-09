@@ -1,5 +1,5 @@
 %%% -*- mode: erlang -*-
-%%% @doc       Lexer for the riak Time Series Query Language.
+%%% @doc       Lexer for the SmolSQL.
 %%% @author    gguthrie@basho.com
 %%% @copyright (C) 2015 Basho
 
@@ -105,7 +105,7 @@ Erlang code.
          get_tokens/1
         ]).
 
--include("riak_ql.xrl.tests").
+-include("smolsql.xrl.tests").
 
 get_tokens(X) ->
     Toks = lex(X),

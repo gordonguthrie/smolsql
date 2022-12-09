@@ -1,5 +1,5 @@
 %% -*- erlang -*-
-%%% @doc       Parser for the riak Time Series Query Language.
+%%% @doc       Parser for SmolSQLx.
 %%% @author    gguthrie@basho.com
 %%% @copyright (C) 2015 Basho
 
@@ -67,7 +67,7 @@ Endsymbol '$end'.
 
 Statement -> Query : convert('$1').
 Statement -> Insert : '$1'.
-Statement -> Delete : '$1'.
+Statement -> Delete : convert('$1').
 
 Insert -> insert_into Bucket openb Fields closeb values openb Vals2 closeb : make_insert('$2', '$4', '$8').
 
@@ -138,6 +138,7 @@ Comp -> notapprox : '$1'.
 %% Section 14.9 of the SQL Foundation Document
 %% We only implement <delete statement: searched>
 Delete -> delete from Bucket Where : make_delete('$3', '$4').
+Delete -> delete from Bucket       : make_delete('$3', {where, []}).
 
 Erlang code.
 
@@ -153,7 +154,7 @@ Erlang code.
           ops        = []
          }).
 
--include("riak_ql_sql.hrl").
+-include("smolsql.hrl").
 
 %% export the return value function to prevent xref errors
 %% this fun is used during the parsing and is marked as
@@ -164,15 +165,15 @@ Erlang code.
 	 ]).
 
 -ifdef(TEST).
--include("riak_ql.yrl.tests").
+-include("smolsql.yrl.tests").
 -endif.
 
 make_insert({word, Bucket}, {list, Fields}, {list, Vals}) ->
     Len1 = length(Fields),
     Len2 = length(Vals),
     case Len1 of
-	Len2 -> #riak_sql_insert_v1{'INSERT INTO' = list_to_binary(Bucket),
-				    'VALUES'      = lists:zip(Fields, Vals)}
+	Len2 -> #smolsql_insert{'INSERT INTO' = Bucket,
+				            'VALUES'      = lists:zip(Fields, Vals)}
 		    ;
 	_ -> exit("field list doesn't match values list")
     end.
@@ -184,16 +185,16 @@ convert(#outputs{type       = select,
 		         inner_join = II,
 		         on         = O,
 		         where      = W}) ->
-	#riak_sql_v1{'SELECT'     = F,
-			     'FROM'       = B,
-			     'WHERE'      = W,
-			     'INNER JOIN' = II,
-			     'ON'         = O};
-convert(#outputs{type = create} = O) ->
-    O;
-convert(X) ->
-    io:format("X is ~p~n", [X]),
-    X.
+	#smolsql_select{'SELECT'     = F,
+			        'FROM'       = B,
+			        'WHERE'      = W,
+			        'INNER JOIN' = II,
+			        'ON'         = O};
+convert(#outputs{type    = delete,
+                 buckets = B,
+                 where   = W}) ->
+    #smolsql_delete{'FROM'  = B,
+                    'WHERE' = W}.
 
 process({chars, A}) ->
     {word, A}.
@@ -211,8 +212,8 @@ make_clause({select, _A}, {_, B}, {from, _C}, {Type, D}, {_, E}) ->
                 regex  -> regex
             end,
     Bucket = case Type2 of
-		 string -> list_to_binary(D);
-		 list   -> {Type2, [list_to_binary(X) || X <- D]};
+		 string -> D;
+		 list   -> {Type2, D};
 		 regex  -> {Type2, D}
 	     end,
     _O = #outputs{type    = select,
@@ -222,8 +223,8 @@ make_clause({select, _A}, {_, B}, {from, _C}, {Type, D}, {_, E}) ->
                  }.
 
 add_inner(A, {word, B}, {word, C}, {word, D}) ->
-    A#outputs{inner_join = list_to_binary(B),
-	      on         = {C, D}}.
+    A#outputs{inner_join = B,
+	          on         = {C, D}}.
 
 add_limit(A, _B, {int, C}) ->
     A#outputs{limit = C}.
@@ -279,7 +280,7 @@ make_list({_,    A}, {_, B}) -> {list, [A, B]}.
 make_expr(A) ->
     {conditional, A}.
 
-make_delete({identifier, Bucket}, {_Where, W}) ->
+make_delete({word, Bucket}, {where, W}) ->
    #outputs{type    = delete,
             buckets = Bucket,
             where   = W}.

@@ -5,18 +5,18 @@
 %% Tests
 keywords_1_test_() ->
     Str = "select",
-    Got = riak_ql_lexer:get_tokens(Str),
+    Got = smolsql_lexer:get_tokens(Str),
     Expected = [{select, Str}],
     ?_assertEqual(Expected, Got).
 
 keywords_2_test_() ->
     Str = "seLEct",
-    Got = riak_ql_lexer:get_tokens(Str),
+    Got = smolsql_lexer:get_tokens(Str),
     Expected = [{select, Str}],
     ?_assertEqual(Expected, Got).
 
 keywords_3_test_() ->
-    Got = riak_ql_lexer:get_tokens("from Where anD oR oN delETe InneR JOIn"),
+    Got = smolsql_lexer:get_tokens("from Where anD oR oN delETe InneR JOIn"),
     Expected = [
                 {from,       "from"},
                 {where,      "Where"},
@@ -29,7 +29,7 @@ keywords_3_test_() ->
     ?_assertEqual(Expected, Got).
 
 keywords_3a_test_() ->
-    Got = riak_ql_lexer:get_tokens("from where and or delete inner join"),
+    Got = smolsql_lexer:get_tokens("from where and or delete inner join"),
     Expected = [
                 {from,       "from"},
                 {where,      "where"},
@@ -41,7 +41,7 @@ keywords_3a_test_() ->
     ?_assertEqual(Expected, Got).
 
 keywords_3b_test_() ->
-    Got = riak_ql_lexer:get_tokens("FROM WHERE AND OR INNER JOIN"),
+    Got = smolsql_lexer:get_tokens("FROM WHERE AND OR INNER JOIN"),
     Expected = [
                 {from,       "FROM"},
                 {where,      "WHERE"},
@@ -52,7 +52,7 @@ keywords_3b_test_() ->
     ?_assertEqual(Expected, Got).
 
 words_containing_keywords_test_() ->
-    Got = riak_ql_lexer:get_tokens("error or horror and handy andy"),
+    Got = smolsql_lexer:get_tokens("error or horror and handy andy"),
     Expected = [
                 {chars, "error"},
                 {or_,   "or"},
@@ -64,7 +64,7 @@ words_containing_keywords_test_() ->
     ?_assertEqual(Expected, Got).
 
 words_containing_digits_test_() ->
-    Got = riak_ql_lexer:get_tokens("'sha512' sha 512"),
+    Got = smolsql_lexer:get_tokens("'sha512' sha 512"),
     Expected = [
                 {chars, "sha512"},
                 {chars, "sha"},
@@ -73,7 +73,7 @@ words_containing_digits_test_() ->
     ?_assertEqual(Expected, Got).
 
 nums_test_() ->
-    Got = riak_ql_lexer:get_tokens("1 -2 2.0 -2.0 3.3e+3 -3.3e-3"),
+    Got = smolsql_lexer:get_tokens("1 -2 2.0 -2.0 3.3e+3 -3.3e-3"),
     Expected = [
                 {int, 1},
                 {int, -2},
@@ -85,7 +85,7 @@ nums_test_() ->
     ?_assertEqual(Expected, Got).
 
 ops_test_() ->
-    Got = riak_ql_lexer:get_tokens("> < <> != !~ = =~"),
+    Got = smolsql_lexer:get_tokens("> < <> != !~ = =~"),
     Expected = [
                 {gt,        ">"},
                 {lt,        "<"},
@@ -98,7 +98,7 @@ ops_test_() ->
     ?_assertEqual(Expected, Got).
 
 brackets_test_() ->
-    Got = riak_ql_lexer:get_tokens(" ( )"),
+    Got = smolsql_lexer:get_tokens(" ( )"),
     Expected = [
                 {openb,  "("},
                 {closeb, ")"}
@@ -106,14 +106,14 @@ brackets_test_() ->
     ?_assertEqual(Expected, Got).
 
 datetime_1a_test_() ->
-    Got = riak_ql_lexer:get_tokens("'23 April 1963 8:00 AM'"),
+    Got = smolsql_lexer:get_tokens("'23 April 1963 8:00 AM'"),
     Expected = [
                 {datetime, {{1963, 4, 23}, {8, 0, 0}}}
                ],
     ?_assertEqual(Expected, Got).
 
 datetime_1b_test_() ->
-    Got = riak_ql_lexer:get_tokens("'  23   April 1963 8:00 AM  '"),
+    Got = smolsql_lexer:get_tokens("'  23   April 1963 8:00 AM  '"),
     Expected = [
                 {datetime, {{1963, 4, 23}, {8, 0, 0}}}
                ],
@@ -121,42 +121,42 @@ datetime_1b_test_() ->
 
 %% this test can never pass becuz the date parser substitutes the H:M:s from now() if there is not time in the string
 %% datetime_1c_test_() ->
-%%     Got = riak_ql_lexer:get_tokens("'2013-08-13'"),
+%%     Got = smolsql_lexer:get_tokens("'2013-08-13'"),
 %%     Expected = [
 %%              {datetime, {{2013, 8, 13}, {0, 0, 0}}}
 %%             ],
 %%     ?_assertEqual(Expected, Got).
 
 datetime_1d_test_() ->
-    Got = riak_ql_lexer:get_tokens("'2013-08-12 23:32:01'"),
+    Got = smolsql_lexer:get_tokens("'2013-08-12 23:32:01'"),
     Expected = [
                 {datetime, {{2013, 8, 12}, {23, 32, 1}}}
                ],
     ?_assertEqual(Expected, Got).
 
 not_a_date_test_() ->
-    Got = riak_ql_lexer:get_tokens("'ergle'"),
+    Got = smolsql_lexer:get_tokens("'ergle'"),
     Expected = [
                 {chars, "ergle"}
                ],
     ?_assertEqual(Expected, Got).
 
 double_quote_1_test_() ->
-    Got = riak_ql_lexer:get_tokens("\" yardle hoop !@#$%^&*() _ -\""),
+    Got = smolsql_lexer:get_tokens("\" yardle hoop !@#$%^&*() _ -\""),
     Expected = [
                 {quoted, "yardle hoop !@#$%^&*() _ -"}
                ],
     ?_assertEqual(Expected, Got).
 
 regex_1_test_() ->
-    Got = riak_ql_lexer:get_tokens("/*./"),
+    Got = smolsql_lexer:get_tokens("/*./"),
     Expected = [
                 {regex, "/*./"}
                ],
     ?_assertEqual(Expected, Got).
 
 regex_2_test_() ->
-    Got = riak_ql_lexer:get_tokens("/^*./i"),
+    Got = smolsql_lexer:get_tokens("/^*./i"),
     Expected = [
                 {regex, "/^*./i"}
                ],
@@ -165,7 +165,7 @@ regex_2_test_() ->
     ?_assertEqual(Expected, Got).
 
 regex_3_test_() ->
-    Got = riak_ql_lexer:get_tokens("/*./ or /erkle/"),
+    Got = smolsql_lexer:get_tokens("/*./ or /erkle/"),
     Expected = [
                 {regex, "/*./"},
                 {or_,   "or"},
@@ -174,7 +174,7 @@ regex_3_test_() ->
     ?_assertEqual(Expected, Got).
 
 chars_test_() ->
-    Got = riak_ql_lexer:get_tokens("r_t , ee where"),
+    Got = smolsql_lexer:get_tokens("r_t , ee where"),
     Expected = [
                 {chars, "r_t"},
                 {comma, ","},
@@ -186,7 +186,7 @@ chars_test_() ->
     ?_assertEqual(Expected, Got).
 
 arithmatic_test_() ->
-    Got = riak_ql_lexer:get_tokens(" + - * / "),
+    Got = smolsql_lexer:get_tokens(" + - * / "),
     Expected = [
                 {plus,       "+"},
                 {minus,      "-"},
@@ -196,7 +196,7 @@ arithmatic_test_() ->
     ?_assertEqual(Expected, Got).
 
 general_test_() ->
-    Got = riak_ql_lexer:get_tokens("select v from r_t where time > '23 April 63 1:2:3'"),
+    Got = smolsql_lexer:get_tokens("select v from r_t where time > '23 April 63 1:2:3'"),
     Expected = [
                 {select, "select"},
                 {chars,  "v"},

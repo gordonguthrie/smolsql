@@ -5,18 +5,23 @@
 -type sorter()     :: term().
 -type combinator() :: term().
 
--record(riak_sql_v1,
+-record(smolsql_select,
 	{
 	  'SELECT'      = []    :: [selection() | operator() | combinator()],
 	  'FROM'        = <<>>  :: binary() | {list, [binary()]} | {regex, list()},
 	  'WHERE'       = []    :: [filter()],
-	  'ORDER BY'    = []    :: [sorter()],
 	  'INNER JOIN'  = [],
 	  'ON'          = []
 	}).
 
--record(riak_sql_insert_v1,
+-record(smolsql_insert,
 	{
 	  'INSERT INTO' = [],
 	  'VALUES'      = []
+	}).
+
+-record(smolsql_delete,
+	{
+	  'FROM'        = <<>>  :: binary() | {list, [binary()]} | {regex, list()},
+	  'WHERE'       = []    :: [filter()]
 	}).
