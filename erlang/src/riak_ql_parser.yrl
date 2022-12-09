@@ -179,30 +179,16 @@ make_insert({word, Bucket}, {list, Fields}, {list, Vals}) ->
 
 
 convert(#outputs{type       = select,
-		 buckets    = B,
-		 fields     = F,
-		 inner_join = II,
-		 on         = O,
-		 limit      = L,
-		 where      = W}) ->
-    Q = case B of
-	    {Type, _} when Type =:= list orelse Type =:= regex ->
-		#riak_sql_v1{'SELECT'     = F,
+		         buckets    = B,
+		         fields     = F,
+		         inner_join = II,
+		         on         = O,
+		         where      = W}) ->
+	#riak_sql_v1{'SELECT'     = F,
 			     'FROM'       = B,
 			     'WHERE'      = W,
 			     'INNER JOIN' = II,
-			     'ON'         = O,
-			     'LIMIT'      = L};
-	    _ ->
-		#riak_sql_v1{'SELECT'     = F,
-			     'FROM'       = B,
-			     'WHERE'      = W,
-			     'INNER JOIN' = II,
-			     'ON'         = O,
-			     'LIMIT'      = L,
-			     helper_mod = riak_ql_ddl:make_module_name(B)}
-	end,
-    Q;
+			     'ON'         = O};
 convert(#outputs{type = create} = O) ->
     O;
 convert(X) ->

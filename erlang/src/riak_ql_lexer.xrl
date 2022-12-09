@@ -8,13 +8,10 @@ Definitions.
 AND = (A|a)(N|n)(D|d)
 AS = (A|a)(S|s)
 DELETE = (D|d)(E|e)(L|l)(E|e)(T|t)(E|e)
-DROP = (D|d)(R|r)(O|o)(P|p)
-FLOAT = (F|f)(L|l)(O|o)(A|a)(T|t)
 FROM = (F|f)(R|r)(O|o)(M|m)
 INNER = (I|i)(N|n)(N|n)(E|e)(R|r)
 INNER_JOIN = (I|i)(N|n)(N|n)(E|e)(R|r)\s(J|j)(O|o)(I|i)(N|n)
 INSERT_INTO = (I|i)(N|n)(S|s)(E|e)(R|r)(T|t)\s(I|i)(N|n)(T|t)(O|o)
-INT = (I|i)(N|n)(T|t)
 JOIN = (J|j)(O|o)(I|i)(N|n)
 ON = (O|o)(N|n)
 OR = (O|o)(R|r)
@@ -122,7 +119,8 @@ post_p([], Acc) ->
     [{Type, X} || {Type, X} <- lists:reverse(Acc), Type =/= whitespace];
 % when you've merged two items hoy them back on the list
 % so they can continue to sook up chars
-post_p([{Word1, W1}, {Word2, W2} | T], Acc) when Word1 =:= select  orelse
+post_p([{Word1, W1}, {Word2, W2} | T], Acc) when Word1 =:= chars   orelse
+                                                 Word1 =:= select  orelse
                                                  Word1 =:= from    orelse
                                                  Word1 =:= and_    orelse
                                                  Word1 =:= or_     orelse
@@ -130,11 +128,12 @@ post_p([{Word1, W1}, {Word2, W2} | T], Acc) when Word1 =:= select  orelse
                                                  Word1 =:= delete  orelse
                                                  Word1 =:= inner   orelse
                                                  Word1 =:= join,
+                                                 Word2 =:= chars   orelse
                                                  Word2 =:= select  orelse
                                                  Word2 =:= from    orelse
-                                                 Word2 =:= limit   orelse
                                                  Word2 =:= and_    orelse
                                                  Word2 =:= or_     orelse
+                                                 Word2 =:= on      orelse
                                                  Word2 =:= delete  orelse
                                                  Word2 =:= inner   orelse
                                                  Word2 =:= join    ->
@@ -152,7 +151,6 @@ fix_up_date(Date) ->
         {error, bad_date} -> {chars, Date2};
         Date4             -> {datetime, Date4}
     end.
-
 
 strip_quoted(Date) ->
     Date2 = string:strip(Date, both, $"), %"
