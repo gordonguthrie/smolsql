@@ -1,0 +1,91 @@
+%% -*- erlang -*-
+-include_lib("eunit/include/eunit.hrl").
+-compile(export_all).
+
+compile_pass_1_test_() ->
+	Def = normalise_def("autoindex: primarykey\n" ++
+		  				"firstname: varchar\n"    ++
+						"lastname:  varchar\n"    ++
+						"age:       integer\n"    ++
+						"height:    float\n"      ++
+						"dob:       date\n"       ++
+						"is_member: boolean\n"),
+	Exp = {index,[{"autoindex","primarykey"}],
+                        cols,
+                        [{"ismember","boolean"},
+                         {"dob","date"},
+                         {"height","float"},
+                         {"age","integer"},
+                         {"lastname","varchar"},
+                         {"firstname","varchar"}]},
+    Got = parse(Def, [], [], []),
+	?_assertEqual(Exp, Got).
+
+compile_pass_2_test_() ->
+	Def = normalise_def("index:     email\n" ++
+		  				"email:     varchar\n"    ++
+		  				"firstname: varchar\n"    ++
+						"lastname:  varchar\n"    ++
+						"age:       integer\n"    ++
+						"height:    float\n"      ++
+						"dob:       date\n"       ++
+						"is_member: boolean\n"),
+	Exp = {index,[{"index","email"}],
+                        cols,
+                        [{"ismember","boolean"},
+                         {"dob","date"},
+                         {"height","float"},
+                         {"age","integer"},
+                         {"lastname","varchar"},
+                         {"firstname","varchar"},
+                         {"email","varchar"}]},
+    Got = parse(Def, [], [], []),
+	?_assertEqual(Exp, Got).
+
+
+no_definion_fail_test_() ->
+	Exp = {errors, ["no table definition"]},
+    Got = parse([], [], [], []),
+	?_assertEqual(Exp, Got).
+
+no_index_fail_test_() ->
+	Def = normalise_def("firstname: varchar\n"    ++
+						"lastname:  varchar\n"    ++
+						"age:       integer\n"    ++
+						"height:    float\n"      ++
+						"dob:       date\n"       ++
+						"is_member: boolean\n"),
+	Exp = {errors, ["no index definition"]},
+    Got = parse(Def, [], [], []),
+	?_assertEqual(Exp, Got).
+
+no_cols_fail_test_() ->
+	Def = normalise_def("autoindex: primarykey\n"),
+	Exp = {errors, ["no column definitions"]},
+    Got = parse(Def, [], [], []),
+	?_assertEqual(Exp, Got).
+
+duff_type_fail_test_() ->
+	Def = normalise_def("autoindex: primarykey\n" ++
+		  				"firstname: varchar\n"    ++
+						"lastname:  varchar\n"    ++
+						"age:       DUFFTYPE\n"   ++
+						"height:    float\n"      ++
+						"dob:       date\n"       ++
+						"is_member: boolean\n"),
+	Exp = {errors,[{invalid_type,{"age","DUFFTYPE"}}]},
+    Got = parse(Def, [], [], []),
+	?_assertEqual(Exp, Got).
+
+duplicate_fiels_fail_test_() ->
+	Def = normalise_def("autoindex: primarykey\n" ++
+		  				"firstname: varchar\n"    ++
+						"lastname:  varchar\n"    ++
+						"age:       date\n"       ++
+						"height:    float\n"      ++
+						"age:       float\n"       ++
+						"dob:       date\n"       ++
+						"is_member: boolean\n"),
+	Exp = {errors, ["duplicated fields"]},
+    Got = parse(Def, [], [], []),
+	?_assertEqual(Exp, Got).

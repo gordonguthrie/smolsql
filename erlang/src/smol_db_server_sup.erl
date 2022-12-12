@@ -30,7 +30,11 @@ init([]) ->
     SupFlags = #{strategy => one_for_all,
                  intensity => 0,
                  period => 1},
-    ChildSpecs = [],
+    Templates  = {belka_templates, {belka_templates, start_link, []},
+                  permanent, 5000, worker, [belka_templates]},
+    ChildSpecs = [
+    				Templates
+    			 ],
     {ok, {SupFlags, ChildSpecs}}.
 
 %% internal functions

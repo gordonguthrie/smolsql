@@ -1,0 +1,52 @@
+20 text/gemini
+#  💻 Welcome to the Smol DB Server
+This server implements a tiny subset of SQL and stores all data in human readable files.
+=> https://github.com/gordonguthrie/smolsql read more
+
+## 🏦 Databases
+~format_dbs_fn~;
+=> /dbs/create create a new database
+
+## ⌨️ Configurations
+This server is configured to only accept connections from one of these users:
+~format_admins_fn~;
+
+## 🎛 How It Works
+To execute SQL send a request to:
+```
+/db/<dbname>
+```
+on the 10 response post back the sql as query parameters
+```
+sql=sql statement
+```
+Databases are created on first-write
+
+Tables are created by posting a table definition to
+```
+/db/<dbmame>/create?def=<table definition>
+```
+The table definition takes the form of a list of of tuples, each tuple is a pair:
+```
+{<columnname>, <type>}
+```
+The columnname can be any text (you can use quotes) and the type must be one of:
+```
+int
+float
+varchar
+date
+autoindex
+```
+
+## 🏁The SQL That Is Supported
+
+```
+INSERT INTO table VALUES (val1, val2, val3);
+INSERT INTO table (col1, col2, col3...) VALUES (val1, val2, val3...);
+SELECT * FROM table;
+SELECT col1, col2, col3... FROM table;
+SELECT [* | col1, col2, col3, col4...] FROM table WHERE (col1='alice' AND col2='bob'( OR (col3='charlie' AND col4 [=, <, >, =<. >=] 3);
+SELECT [* | col1, col2, col3] FROM table1 INNER JOIN table2 ON table1.col1 = table2.col2 WHERE...;
+DELETE FROM table WHERE ...;
+```

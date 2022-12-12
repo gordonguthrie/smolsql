@@ -1,0 +1,51 @@
+20 text/gemini
+
+## 🗄 Create A Table
+
+=> /dbs/~db~;/create/~table~; create a table
+
+## 🎓 Tutorial
+
+Here is an example of table creation:
+
+```
+autoindex: primarykey
+firstname: varchar
+lastname:  varchar
+age:       integer
+height:    float
+dob:       date
+is_member: boolean
+```
+
+Here is another:
+
+```
+index:     email
+email:     varchar
+firstname: varchar
+lastname:  varchar
+age:       integer
+height:    float
+dob:       date
+is_member: boolean
+```
+
+The table declaration consists of two parts:
+* how it will be indexed
+* a list of fields
+
+The index options are:
+```
+autoindex: <colname>
+```
+and
+```
+index: <colname>
+```
+
+In the former case you don't need to declare the column anywhere it will be automatically created and on making a new record each one will get an incrementing integer.
+
+In the latter case the index column is used to generate an index as a hash - if you wish to use the data supplied for the index (in this case an email address) you need to define a column with the same name.
+
+Conventionally the indexes are declared at the top, but they don't have to be.

@@ -165,7 +165,7 @@ Erlang code.
 	 ]).
 
 -ifdef(TEST).
--include("smolsql.yrl.tests").
+-include("../tests/smolsql.yrl.tests").
 -endif.
 
 make_insert({word, Bucket}, {list, Fields}, {list, Vals}) ->

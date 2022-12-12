@@ -1,0 +1,7 @@
+20 text/gemini
+
+## 🎛 DB Status
+
+The database ~db~; has no tables yet
+
+=> /dbs/~db~;/create create a new table

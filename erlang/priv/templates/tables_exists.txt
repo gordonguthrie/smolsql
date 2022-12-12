@@ -1,0 +1,8 @@
+20 text/gemini
+
+## 🎛 DB Status
+
+The following tables exist in ~db~;:
+~format_tables_fn~;
+
+=> /dbs/~db~;/create create a new table

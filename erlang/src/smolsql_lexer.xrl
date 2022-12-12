@@ -105,7 +105,7 @@ Erlang code.
          get_tokens/1
         ]).
 
--include("smolsql.xrl.tests").
+-include("../tests/smolsql.xrl.tests").
 
 get_tokens(X) ->
     Toks = lex(X),
