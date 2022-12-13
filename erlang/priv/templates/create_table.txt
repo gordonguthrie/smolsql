@@ -1,8 +1,8 @@
 20 text/gemini
 
-## 🗄 Create A Table
+## 🗄 Define the table ~table~;
 
-=> /dbs/~db~;/create/~table~; create a table
+=> /dbs/~db~;/create/~table~; submit the table definition
 
 ## 🎓 Tutorial
 

@@ -10,14 +10,14 @@ compile_pass_1_test_() ->
 						"height:    float\n"      ++
 						"dob:       date\n"       ++
 						"is_member: boolean\n"),
-	Exp = {index,[{"autoindex","primarykey"}],
+	Exp = {ok, {index,[{"autoindex","primarykey"}],
                         cols,
                         [{"ismember","boolean"},
                          {"dob","date"},
                          {"height","float"},
                          {"age","integer"},
                          {"lastname","varchar"},
-                         {"firstname","varchar"}]},
+                         {"firstname","varchar"}]}},
     Got = parse(Def, [], [], []),
 	?_assertEqual(Exp, Got).
 
@@ -30,7 +30,7 @@ compile_pass_2_test_() ->
 						"height:    float\n"      ++
 						"dob:       date\n"       ++
 						"is_member: boolean\n"),
-	Exp = {index,[{"index","email"}],
+	Exp = {ok, {index,[{"index","email"}],
                         cols,
                         [{"ismember","boolean"},
                          {"dob","date"},
@@ -38,10 +38,9 @@ compile_pass_2_test_() ->
                          {"age","integer"},
                          {"lastname","varchar"},
                          {"firstname","varchar"},
-                         {"email","varchar"}]},
+                         {"email","varchar"}]}},
     Got = parse(Def, [], [], []),
 	?_assertEqual(Exp, Got).
-
 
 no_definion_fail_test_() ->
 	Exp = {errors, ["no table definition"]},

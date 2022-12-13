@@ -32,8 +32,11 @@ init([]) ->
                  period => 1},
     Templates  = {belka_templates, {belka_templates, start_link, []},
                   permanent, 5000, worker, [belka_templates]},
+    Engine     = {smol_sql_engine, {smol_sql_engine, start_link, []},
+                  permanent, 5000, worker, [smol_sql_engine]},
     ChildSpecs = [
-    				Templates
+    				Templates,
+                    Engine
     			 ],
     {ok, {SupFlags, ChildSpecs}}.
 
