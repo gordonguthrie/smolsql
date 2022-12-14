@@ -1,0 +1,5 @@
+20 text/gemini
+
+table ~table~; in database ~db~; not created
+
+~table_creation_errors_format_fn~;

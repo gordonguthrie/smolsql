@@ -1,0 +1,3 @@
+20 text/gemini
+
+~format_table_details_fn~;

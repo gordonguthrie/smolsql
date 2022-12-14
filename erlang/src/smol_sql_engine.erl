@@ -14,7 +14,9 @@
             list_dbs/0,
             create_db/1,
             list_tables/1,
-            create_table/3
+            create_table/3,
+            get_table_details/2,
+            clean/1
         ]).
 
 % Debugging
@@ -64,14 +66,17 @@ start_link(Args, Opts) ->
 list_dbs() ->
     gen_server:call(?MODULE, list_dbs).
 
-create_db(DB) ->
-    gen_server:call(?MODULE, {create_db, DB}).
+create_db(DBName) ->
+    gen_server:call(?MODULE, {create_db, DBName}).
 
-list_tables(DB) ->
-    gen_server:call(?MODULE, {list_tables, DB}).
+list_tables(DBName) ->
+    gen_server:call(?MODULE, {list_tables, DBName}).
 
-create_table(TableDef, DB, Table) ->
-    gen_server:call(?MODULE, {create_table, {TableDef, DB, Table}}).
+create_table(TableDef, DBName, Table) ->
+    gen_server:call(?MODULE, {create_table, {TableDef, DBName, Table}}).
+
+get_table_details(DBName, TableName) ->
+    gen_server:call(?MODULE, {get_table_details, {DBName, TableName}}).
 
 % Debugging
 dump() ->
@@ -87,7 +92,6 @@ init(_Args) ->
     {ok, #state{dbroot = DBRoot, dbs = DBsAndTables}}.
 
 handle_call(dump, _from, #state{dbroot = DBRoot, dbs = DBs} = State) ->
-    io:format("The directory root of the databases is ~p~n", [DBRoot]),
     [dump_db(X) || X <- DBs],
     {reply, ok, State};
 handle_call(list_dbs, _from, #state{dbs = DBs} = State) ->
@@ -95,38 +99,66 @@ handle_call(list_dbs, _from, #state{dbs = DBs} = State) ->
 handle_call({create_db, DBName}, _From, #state{dbroot = DBRoot,
                                                dbs    = DBs} = State) ->
     CleanDB = clean(DBName),
-    {NewDBs, Reply} = case proplists:is_defined(CleanDB, DBs) of
+    {NewDBs, Reply} = case lists:keymember(CleanDB, 1, DBs) of
         true  ->
-            io:format("db already created~n"),
             {DBs, {ok, CleanDB}};
         false ->
-            io:format("creating db and tables"),
             TablesDir = string:join([DBRoot, CleanDB, "tables", "FILES"], "/"),
             ok = filelib:ensure_dir(TablesDir),
             {[{CleanDB, []} | DBs], {ok, CleanDB}}
     end,
     {reply, Reply, State#state{dbs = NewDBs}};
-handle_call({list_tables, DB}, _from, #state{dbs = DBs} = State) ->
-    CleanDB = clean(DB),
-    Reply = case proplists:get_value(CleanDB, DBs) of
-        undefined -> {error, {db_not_defined, CleanDB}};
-        Ts         -> {ok,    Ts}
+handle_call({list_tables, DBName}, _from, #state{dbs = DBs} = State) ->
+    CleanDB = clean(DBName),
+    Reply = case lists:keyfind(CleanDB, 1, DBs) of
+        false   -> {error, {db_not_defined, CleanDB}};
+        {_, Ts} -> {ok,    Ts}
     end,
     {reply, Reply, State};
-handle_call({create_table, {TableDef, DB, TableName}}, _from, State) ->
+handle_call({create_table, {TableDef, DBName, TableName}}, _from, State) ->
     #state{dbroot = DBRoot, dbs = DBs} = State,
-    CleanDB = clean(DB),
+    CleanDB = clean(DBName),
     CleanTable = clean(TableName),
-    Reply = case proplists:get_value(DB, DBs) of
-        undefined ->
-            {error, {db_not_defined, DB}};
-        _Ts ->
-            case parse_and_save(TableDef, DBRoot, CleanDB, CleanTable) of
-                ok         -> {ok, CleanTable};
-                {error, E} -> {error, {"table not created", E}}
+    {Reply, NewState} = case lists:keyfind(DBName, 1, DBs) of
+        false ->
+            {{error, {db_not_defined, DBName}}, State};
+        {_, TDefs} ->
+            case lists:keyfind(CleanTable, 1, TDefs) of
+                false ->
+                    case parse_and_save(TableDef, DBRoot, CleanDB, CleanTable) of
+                        {ok, NormalTDef}  ->
+                             PTDef = process_tabledef(NormalTDef),
+                             NewTDefs = lists:keystore(CleanTable, 1, TDefs, {CleanTable, PTDef}),
+                             NewDBs = lists:keystore(CleanDB, 1, DBs, {CleanDB, NewTDefs}),
+                            {{ok, {CleanDB, CleanTable}}, State#state{dbs = NewDBs}};
+                        {error, E} ->
+                            {{error, {"table not created", E}}, State}
+                    end;
+                _ ->
+                    {{error, {"table not created", ["table already exists"]}}, State}
+            end
+    end,
+    {reply, Reply, NewState};
+
+handle_call({get_table_details, {DBName, TableName}}, _from, State) ->
+    #state{dbs = DBs} = State,
+    CleanDB = clean(DBName),
+    CleanTable = clean(TableName),
+    Reply = case lists:keyfind(DBName, 1, DBs) of
+        false ->
+            {error, {db_not_defined, CleanDB}};
+        {_, TDefs} ->
+            case lists:keyfind(CleanTable, 1, TDefs) of
+                false ->
+                    {error, {table_not_defined, {CleanDB, CleanTable}}};
+                {_, TDef} ->
+                    {ok, [{db,       CleanDB},
+                          {table,    CleanTable},
+                          {tabledef, TDef}]}
             end
     end,
     {reply, Reply, State};
+
 handle_call(Request, _From, State) ->
     io:format("in handle call with ~p~n", [Request]),
     {reply, ignored, State}.
@@ -169,7 +201,8 @@ dump_tables([H | T]) ->
     io:format("Table: ~s~n", [Table]),
     io:format("* index: ~s of type ~s~n", [Idx, IType]),
     io:format("* the colums are:~n"),
-    [io:format("  * ~s of type ~s~n", [C, CType]) || {C, CType} <- Cols].
+    [io:format("  * ~s of type ~s~n", [C, CType]) || {C, CType} <- Cols],
+    dump_tables(T).
 
 read_dbs([],     _DBRoot, Acc) -> lists:sort(Acc);
 read_dbs([H | T], DBRoot, Acc) ->
@@ -184,20 +217,23 @@ read_dbs([H | T], DBRoot, Acc) ->
 read_tabledefs([], Acc) -> Acc;
 read_tabledefs([H | T], Acc) ->
     TableName = filename:basename(H, ".tabledef"),
-    {ok, TD} = file:consult(H),
-    io:format("TD is ~p~n", [TD]),
-    [{Type, Index}] = proplists:get_value(index, TD),
-    Cols            = proplists:get_value(cols, TD),
-    Def = #{index => Index, index_type => Type, cols => Cols},
+    {ok, TableDef} = file:consult(H),
+    Def = process_tabledef(TableDef),
     read_tabledefs(T, [{TableName, Def} | Acc]).
+
+process_tabledef(TableDef) ->
+    {_, [{Type, Index}]} = lists:keyfind(index, 1, TableDef),
+    {_, Cols}            = lists:keyfind(cols, 1, TableDef),
+    #{index => Index, index_type => Type, cols => Cols}.
 
 parse_and_save(TableDef, DBRoot, DB, Table) ->
     Lines = normalise_def(TableDef),
     case parse(Lines, [], [], []) of
         {ok, ParsedTableDef} ->
             File = filename:join([DBRoot, DB, Table ++ ".tabledef"]),
-            ok = write_terms(File, ParsedTableDef);
-        {error, E} ->
+            ok = write_terms(File, ParsedTableDef),
+            {ok, ParsedTableDef};
+        {errors, E} ->
             {error, E}
     end.
 
@@ -247,5 +283,4 @@ normalise_def(Def) ->
 write_terms(FileName, List) ->
     Format = fun(Term) -> io_lib:format("~tp.~n", [Term]) end,
     Text = unicode:characters_to_binary(lists:map(Format, List)),
-    io:format("FileName is ~p~n", [FileName]),
     ok = file:write_file(FileName, Text).
